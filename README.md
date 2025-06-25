@@ -251,6 +251,123 @@ private static IServiceCollection AddBlackjackServices(this IServiceCollection s
 }
 ```
 
+## Poker Game Structure
+
+```mermaid
+classDiagram
+    class Game {
+        -Deck deck
+        -List~Player~ players
+        -Dealer dealer
+        -Table table
+        -Pot pot
+        -int currentPlayerIndex
+        +Game(List~string~ playerNames)
+        +void Start()
+        +void DealHoleCards()
+        +void BettingRound()
+        +void RevealFlop()
+        +void RevealTurn()
+        +void RevealRiver()
+        +void Showdown()
+        +Player DetermineWinner()
+    }
+
+    class Player {
+        -string Name
+        -Hand hand
+        -int Chips
+        +Player(string name, int startingChips)
+        +void PlaceBet(int amount)
+        +void Fold()
+        +void Call(int amount)
+        +void Raise(int amount)
+        +void ReceiveCard(Card card)
+        +void ResetHand()
+    }
+
+    class Hand {
+        -List~Card~ cards
+        +void AddCard(Card card)
+        +int Evaluate()
+        +void Clear()
+    }
+
+    class Dealer {
+        +void DealHoleCards(Game game)
+        +void DealFlop(Game game)
+        +void DealTurn(Game game)
+        +void DealRiver(Game game)
+    }
+
+    class Deck {
+        -List~Card~ cards
+        +Deck()
+        +void Shuffle()
+        +Card Draw()
+        +int Count()
+    }
+
+    class Table {
+        -List~Card~ communityCards
+        +void AddCommunityCard(Card card)
+        +List~Card~ GetCommunityCards()
+    }
+
+    class Card {
+        +Suit Suit
+        +Rank Rank
+        +string ToString()
+    }
+
+    class Pot {
+        -int amount
+        +void AddToPot(int amount)
+        +int GetAmount()
+        +void DistributeWinnings(Player winner)
+    }
+
+    Game --> Deck : has
+    Game --> Player : has
+    Game --> Dealer : has
+    Game --> Table : uses
+    Game --> Pot : uses
+    Player --> Hand : has
+    Hand --> Card : contains
+    Deck --> Card : contains
+    Table --> Card : contains
+    Dealer ..> Deck : deals from
+    Dealer ..> Player : deals to
+
+    class Suit {
+        <<enumeration>>
+        Clubs
+        Diamonds
+        Hearts
+        Spades
+    }
+
+    class Rank {
+        <<enumeration>>
+        Two
+        Three
+        Four
+        Five
+        Six
+        Seven
+        Eight
+        Nine
+        Ten
+        Jack
+        Queen
+        King
+        Ace
+    }
+
+    Card --> Suit : has
+    Card --> Rank : has
+```
+
 ## Requirements
 
 - .NET 9.0
