@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>false</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BellotaLabInterview.Core\BellotaLabInterview.Core.csproj" />
+    <ProjectReference Include="..\BellotaLabInterview.HighStakes\BellotaLabInterview.HighStakes.csproj" />
+    <ProjectReference Include="..\BellotaLabInterview.Uno\BellotaLabInterview.Uno.csproj" />
+    <ProjectReference Include="..\BellotaLabInterview.Poker\BellotaLabInterview.Poker.csproj" />
+    <ProjectReference Include="..\BellotaLabInterview.Blackjack\BellotaLabInterview.Blackjack.csproj" />
+    <ProjectReference Include="..\BellotaLabInterview.Baccarat\BellotaLabInterview.Baccarat.csproj" />
+  </ItemGroup>
+
+</Project>
