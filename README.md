@@ -300,14 +300,6 @@ classDiagram
         +void DealRiver(Game game)
     }
 
-    class Deck {
-        -List~Card~ cards
-        +Deck()
-        +void Shuffle()
-        +Card Draw()
-        +int Count()
-    }
-
     class Table {
         -List~Card~ communityCards
         +void AddCommunityCard(Card card)
@@ -364,6 +356,91 @@ classDiagram
         Ace
     }
 
+    Card --> Suit : has
+    Card --> Rank : has
+```
+
+## Blackjack Game Structure
+
+```mermaid
+classDiagram
+    class Game {
+        -Deck deck
+        -List~Player~ players
+        -Dealer dealer
+        +void Start()
+        +void DealInitial()
+        +void PlayerTurns()
+        +void DealerTurn()
+        +void DetermineWinners()
+    }
+
+    class Player {
+        -string Name
+        -Hand hand
+        +Player(string name)
+        +void Hit(Deck deck)
+        +void Stand()
+    }
+
+    class Hand {
+        -List~Card~ cards
+        +int CalculateValue()
+        +void AddCard(Card card)
+        +bool IsBusted()
+        +bool IsBlackjack()
+    }
+
+    class Deck {
+        -List~Card~ cards
+        +Deck()
+        +void Shuffle()
+        +Card Draw()
+        +int Count()
+    }
+
+    class Card {
+        +Suit Suit
+        +Rank Rank
+        +int GetValue()
+        +string ToString()
+    }
+
+    class Dealer {
+        +void Play(Deck deck)
+    }
+
+    class Suit {
+        <<enumeration>>
+        Clubs
+        Diamonds
+        Hearts
+        Spades
+    }
+
+    class Rank {
+        <<enumeration>>
+        Two
+        Three
+        Four
+        Five
+        Six
+        Seven
+        Eight
+        Nine
+        Ten
+        Jack
+        Queen
+        King
+        Ace
+    }
+
+    Game --> Deck : uses
+    Game --> Player : has
+    Game --> Dealer : has
+    Player --> Hand : has
+    Hand --> Card : contains
+    Deck --> Card : contains
     Card --> Suit : has
     Card --> Rank : has
 ```
