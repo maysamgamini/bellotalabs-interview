@@ -445,6 +445,75 @@ classDiagram
     Card --> Rank : has
 ```
 
+## Hand Evaluation System
+
+```mermaid
+classDiagram
+    class IHandEvaluator {
+        <<interface>>
+        +EvaluateHand(List~Card~ cards, IGameContext context)* HandRank
+        +IsValidHand(List~Card~ cards, IGameContext context)* bool
+        +GetPlayableCards(List~Card~ cards, IGameContext context)* List~Card~
+    }
+
+    class HandEvaluatorBase {
+        <<abstract>>
+        +EvaluateHand(List~Card~ cards, IGameContext context)* HandRank
+        +IsValidHand(List~Card~ cards, IGameContext context) bool
+        +GetPlayableCards(List~Card~ cards, IGameContext context) List~Card~
+    }
+
+    class BlackjackHandEvaluator {
+        +EvaluateHand(List~Card~ cards, IGameContext context) HandRank
+        +IsValidHand(List~Card~ cards, IGameContext context) bool
+        -AdjustForAces(int total, int aceCount) int
+    }
+
+    class PokerHandEvaluator {
+        +EvaluateHand(List~Card~ cards, IGameContext context) HandRank
+        +IsValidHand(List~Card~ cards, IGameContext context) bool
+        -EvaluatePokerHand(List~Card~ cards) HandRank
+    }
+
+    class HandRank {
+        +int Value
+        +string Description
+        +Dictionary~string,object~ AdditionalData
+    }
+
+    IHandEvaluator <|.. HandEvaluatorBase
+    HandEvaluatorBase <|-- BlackjackHandEvaluator
+    HandEvaluatorBase <|-- PokerHandEvaluator
+    BlackjackHandEvaluator ..> HandRank : creates
+    PokerHandEvaluator ..> HandRank : creates
+```
+
+## Game Base Structure
+
+```mermaid
+classDiagram
+    class GameBase {
+        <<abstract>>
+        #IGameContext Context
+        #ICardFactory CardFactory
+        #IHandEvaluator HandEvaluator
+        #IDeck Deck
+        +Initialize(players)*
+        #ValidatePlayers(players)*
+        #InitializeGameState(players)*
+        #DealInitialCards()*
+    }
+
+    class IHandEvaluator {
+        <<interface>>
+        +EvaluateHand(cards, context)* HandRank
+        +IsValidHand(cards, context)* bool
+        +GetPlayableCards(cards, context)* List~Card~
+    }
+
+    GameBase --> IHandEvaluator : uses
+```
+
 ## Requirements
 
 - .NET 9.0
