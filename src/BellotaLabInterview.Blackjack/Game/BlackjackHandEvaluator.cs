@@ -10,8 +10,17 @@ namespace BellotaLabInterview.Blackjack.Game
     {
         public override Task<HandRank> EvaluateHand(IReadOnlyList<ICard> cards, IGameContext context)
         {
-            var total = cards.Sum(card => card.GetValue(context));
-            var aceCount = cards.Count(card => card is StandardCard sc && sc.Rank == CardRank.Ace);
+            // During the game, only count face-up cards for dealer
+            var isDealer = context?.State?.Players?.LastOrDefault() == context?.State?.CurrentPlayer;
+            var isGameOver = context?.State?.CurrentState == GameState.GameOver;
+
+            // Only filter face-down cards during dealer's turn
+            var visibleCards = (isDealer && !isGameOver)
+                ? cards.Where(c => !(c is StandardCard sc) || sc.IsFaceUp).ToList()
+                : cards.ToList();
+            
+            var total = visibleCards.Sum(card => card.GetValue(context));
+            var aceCount = visibleCards.Count(card => card is StandardCard sc && sc.Rank == CardRank.Ace);
 
             // Adjust for aces
             while (total > 21 && aceCount > 0)
@@ -20,10 +29,11 @@ namespace BellotaLabInterview.Blackjack.Game
                 aceCount--;
             }
 
-            var description = total switch
+            var description = (visibleCards.Count, total) switch
             {
-                21 when cards.Count == 2 => "Blackjack!",
-                _ when total > 21 => "Bust",
+                (5, <= 21) => "5-Card Charlie!",
+                (2, 21) => "Blackjack!",
+                (_, > 21) => "Bust",
                 _ => $"Total: {total}"
             };
 

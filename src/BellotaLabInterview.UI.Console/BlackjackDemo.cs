@@ -184,7 +184,7 @@ namespace BellotaLabInterview.UI.Console
                 }
             }
 
-            // Flip all dealer's cards face up
+            // Flip all dealer's cards face up at the start of their turn
             foreach (var card in dealer.Hand.Cast<BlackjackCard>())
             {
                 card.FlipFaceUp();
@@ -202,6 +202,10 @@ namespace BellotaLabInterview.UI.Console
             {
                 System.Console.WriteLine("Dealer hits...");
                 var card = await _deck.DrawCard();
+                if (card is BlackjackCard blackjackCard)
+                {
+                    blackjackCard.FlipFaceUp(); // Ensure new cards are face up
+                }
                 await dealer.AddCard(card);
                 await ShowPlayerHand(dealer);
                 await Task.Delay(1000); // Add a small delay for dramatic effect
@@ -219,19 +223,16 @@ namespace BellotaLabInterview.UI.Console
 
         private async Task ShowPlayerHand(IPlayer player)
         {
-            var handRank = await _handEvaluator.EvaluateHand(player.Hand, _context);
-            System.Console.Write($"{player.Name}'s hand ({handRank.Value}): ");
-            
-            if (player.Name == "Dealer" && !await _game.IsGameOver())
+            // For dealer, only show value of face-up cards during game
+            if (player.Name == "Dealer" && !await _game.IsGameOver() && player != _context.State.CurrentPlayer)
             {
-                // Show first card, hide the rest for dealer during game
+                // First flip cards to their correct state
                 if (player.Hand.Count > 0)
                 {
                     var firstCard = player.Hand[0] as BlackjackCard;
                     if (firstCard != null)
                     {
                         firstCard.FlipFaceUp();
-                        System.Console.Write(firstCard.DisplayName);
                     }
                     for (int i = 1; i < player.Hand.Count; i++)
                     {
@@ -240,13 +241,41 @@ namespace BellotaLabInterview.UI.Console
                         {
                             card.FlipFaceDown();
                         }
+                    }
+                }
+            }
+
+            var handRank = await _handEvaluator.EvaluateHand(player.Hand, _context);
+            
+            // Only show hand value for non-dealer or when all cards are visible
+            if (player.Name != "Dealer" || await _game.IsGameOver() || player == _context.State.CurrentPlayer)
+            {
+                System.Console.Write($"{player.Name}'s hand ({handRank.Value}): ");
+            }
+            else
+            {
+                System.Console.Write($"{player.Name}'s hand: ");
+            }
+            
+            if (player.Name == "Dealer" && !await _game.IsGameOver() && player != _context.State.CurrentPlayer)
+            {
+                // Show first card, hide the rest for dealer during game (but not during dealer's turn)
+                if (player.Hand.Count > 0)
+                {
+                    var firstCard = player.Hand[0] as BlackjackCard;
+                    if (firstCard != null)
+                    {
+                        System.Console.Write(firstCard.DisplayName);
+                    }
+                    for (int i = 1; i < player.Hand.Count; i++)
+                    {
                         System.Console.Write(" XX");
                     }
                 }
             }
             else
             {
-                // Show all cards for players and dealer after game over
+                // Show all cards for players and dealer after game over or during dealer's turn
                 var cards = player.Hand.Cast<BlackjackCard>();
                 foreach (var card in cards)
                 {
