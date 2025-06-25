@@ -67,16 +67,6 @@ namespace BellotaLabInterview.Blackjack.Game
             if (context?.State?.Players == null || !context.State.Players.Any())
                 return true;
 
-            // Check if any player has a 5-Card Charlie (automatic win)
-            foreach (var player in context.State.Players.SkipLast(1)) // Skip dealer
-            {
-                var handRank = await _handEvaluator.EvaluateHand(player.Hand, context);
-                if (player.Hand.Count == 5 && handRank.Value == 22) // 5-Card Charlie
-                {
-                    return true;
-                }
-            }
-
             // Check if all players have busted
             var allPlayersBusted = true;
             foreach (var player in context.State.Players.SkipLast(1)) // Skip dealer
@@ -105,73 +95,55 @@ namespace BellotaLabInterview.Blackjack.Game
         {
             var winners = new List<IPlayer>();
             var dealer = context.State.Players.Last();
+            var dealerHandRank = await _handEvaluator.EvaluateHand(dealer.Hand, context);
+            var dealerHasBlackjack = dealer.Hand.Count == 2 && dealerHandRank.Value == 21;
+            var dealerHas5CardCharlie = dealer.Hand.Count == 5 && dealerHandRank.Value <= 21;
 
-            // First check for 5-Card Charlie (highest priority win condition)
+            // Check each player's hand
             foreach (var player in context.State.Players.SkipLast(1)) // Skip dealer
             {
                 var handRank = await _handEvaluator.EvaluateHand(player.Hand, context);
-                if (player.Hand.Count == 5 && handRank.Value == 22) // 5-Card Charlie
+                // Skip busted players
+                if(handRank.Value > 21)
+                {
+                    continue;
+                }
+
+                // 5-Card Charlie wins if under 21
+                if (player.Hand.Count == 5 && handRank.Value <= 21)
                 {
                     winners.Add(player);
-                    return winners; // 5-Card Charlie is an automatic win
+                    continue; // Skip normal win condition checks for this player
                 }
-            }
 
-            // Check if all players have busted
-            var allPlayersBusted = true;
-            foreach (var player in context.State.Players.SkipLast(1)) // Skip dealer
-            {
-                var handRank = await _handEvaluator.EvaluateHand(player.Hand, context);
-                if (handRank.Value <= 21)
+                // Dealer busts
+                if (dealerHandRank.Value > 21)
                 {
-                    allPlayersBusted = false;
-                    break;
+                    winners.Add(player);
+                    continue;
                 }
-            }
 
-            // If all players busted, dealer wins automatically
-            if (allPlayersBusted)
-            {
-                winners.Add(dealer);
-                return winners;
-            }
-
-            var dealerHandRank = await _handEvaluator.EvaluateHand(dealer.Hand, context);
-            var dealerScore = dealerHandRank.Value;
-
-            // If dealer busts, all non-busted players win
-            if (dealerScore > 21)
-            {
-                foreach (var player in context.State.Players.SkipLast(1)) // Skip dealer
+                var playerHasBlackjack = player.Hand.Count == 2 && handRank.Value == 21;
+                // For non-5-Card Charlie hands, check normal winning conditions
+                if (playerHasBlackjack && !dealerHasBlackjack)
                 {
-                    var playerHandRank = await _handEvaluator.EvaluateHand(player.Hand, context);
-                    if (playerHandRank.Value <= 21)
+                    winners.Add(player);
+                }
+                else if (handRank.Value > dealerHandRank.Value) // Player score beats dealer
+                {
+                    winners.Add(player);
+                }
+                else if (handRank.Value == dealerHandRank.Value) // Push (tie)
+                {
+                    // In case of tie:
+                    // - If both have blackjack, it's a push
+                    // - If neither has blackjack, it's a push
+                    // - If one has blackjack, they win (handled above)
+                    if (playerHasBlackjack == dealerHasBlackjack)
                     {
-                        winners.Add(player);
+                        continue; // Push - neither wins
                     }
                 }
-                return winners;
-            }
-
-            // If dealer doesn't bust, compare each player's hand with dealer
-            foreach (var player in context.State.Players.SkipLast(1)) // Skip dealer
-            {
-                var playerHandRank = await _handEvaluator.EvaluateHand(player.Hand, context);
-                var playerScore = playerHandRank.Value;
-
-                // Player wins if:
-                // 1. They didn't bust (score <= 21)
-                // 2. Their score is higher than dealer's
-                if (playerScore <= 21 && playerScore > dealerScore)
-                {
-                    winners.Add(player);
-                }
-            }
-
-            // If no players won and dealer didn't bust, dealer wins
-            if (winners.Count == 0 && dealerScore <= 21)
-            {
-                winners.Add(dealer);
             }
 
             return winners;
