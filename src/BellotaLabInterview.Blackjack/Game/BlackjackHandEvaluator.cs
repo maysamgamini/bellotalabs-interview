@@ -20,14 +20,22 @@ namespace BellotaLabInterview.Blackjack.Game
                 aceCount--;
             }
 
-            var description = total switch
+            var description = (cards.Count, total) switch
             {
-                21 when cards.Count == 2 => "Blackjack!",
-                _ when total > 21 => "Bust",
+                (5, <= 21) => "5-Card Charlie!",
+                (2, 21) => "Blackjack!",
+                (_, > 21) => "Bust",
                 _ => $"Total: {total}"
             };
 
-            return Task.FromResult(new HandRank(total, description));
+            // For 5-Card Charlie, we'll return a special value higher than 21 but not considered a bust
+            var value = (cards.Count, total) switch
+            {
+                (5, <= 21) => 22, // Special value for 5-Card Charlie to ensure it beats everything else
+                (_, _) => total
+            };
+
+            return Task.FromResult(new HandRank(value, description));
         }
 
         public override async Task<bool> IsValidHand(IReadOnlyList<ICard> cards, IGameContext context)
@@ -36,7 +44,8 @@ namespace BellotaLabInterview.Blackjack.Game
                 return false;
 
             var handRank = await EvaluateHand(cards, context);
-            return handRank.Value <= 21;
+            // Consider 5-Card Charlie as a valid hand even though its value is 22
+            return handRank.Value <= 21 || (cards.Count == 5 && handRank.Value == 22);
         }
 
         public override Task<IReadOnlyList<ICard>> GetPlayableCards(IReadOnlyList<ICard> hand, IGameContext context)

@@ -67,6 +67,16 @@ namespace BellotaLabInterview.Blackjack.Game
             if (context?.State?.Players == null || !context.State.Players.Any())
                 return true;
 
+            // Check if any player has a 5-Card Charlie (automatic win)
+            foreach (var player in context.State.Players.SkipLast(1)) // Skip dealer
+            {
+                var handRank = await _handEvaluator.EvaluateHand(player.Hand, context);
+                if (player.Hand.Count == 5 && handRank.Value == 22) // 5-Card Charlie
+                {
+                    return true;
+                }
+            }
+
             // Check if all players have busted
             var allPlayersBusted = true;
             foreach (var player in context.State.Players.SkipLast(1)) // Skip dealer
@@ -95,6 +105,17 @@ namespace BellotaLabInterview.Blackjack.Game
         {
             var winners = new List<IPlayer>();
             var dealer = context.State.Players.Last();
+
+            // First check for 5-Card Charlie (highest priority win condition)
+            foreach (var player in context.State.Players.SkipLast(1)) // Skip dealer
+            {
+                var handRank = await _handEvaluator.EvaluateHand(player.Hand, context);
+                if (player.Hand.Count == 5 && handRank.Value == 22) // 5-Card Charlie
+                {
+                    winners.Add(player);
+                    return winners; // 5-Card Charlie is an automatic win
+                }
+            }
 
             // Check if all players have busted
             var allPlayersBusted = true;
